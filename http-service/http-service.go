@@ -1,18 +1,15 @@
 package httpservice
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
-	"encoding/json"
-
 	// https://github.com/valyala/fasthttp
-	// https://github.com/julienschmidt/httprouter
 
 	"github.com/julienschmidt/httprouter"
-
 	p "github.com/picobank/instruments-tests/dao-pgx"
 )
 
@@ -20,11 +17,6 @@ func listInstrumentClass(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	fmt.Fprint(w, "ListInstrumentClass...")
 	instrumentClasses, _ := p.ListInstrumentClass()
 	fmt.Fprintf(w, " => %v\n", instrumentClasses)
-}
-
-func listInstruments(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	instruments, _ := p.ListInstruments()
-	fmt.Fprintf(w, "ListInstruments[%d]: \n%v\n", len(instruments), instruments)
 }
 
 func listInstrumentsForInstrumentClassID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -42,17 +34,20 @@ func getInstrument(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	id, _ := strconv.Atoi(ps.ByName("instrumentID"))
 	instrument, _ := p.GetInstrument(uint32(id))
 
-	// fmt.Fprintf(w, "getInstrument( %d ) => %s\n", id, spew.Sdump(instrument)) // no formatting
-	// fmt.Fprintf(w, "%# v", pretty.Formatter(instrument)) // basic generic formatting "github.com/kr/pretty"
+	// fmt.Fprintf(w, "%v", instrument) 						// no formatting
+	// fmt.Fprintf(w, "%# v", pretty.Formatter(instrument)) 	// basic generic formatting "github.com/kr/pretty"
 
 	b, _ := json.MarshalIndent(instrument, "", "  ")
-	// b, _ := json.Marshal(instrument)
 	fmt.Fprintf(w, "%v", string(b)) // json generic formatting "encoding/json"
 }
 
 func searchInstruments(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// queryValues := r.URL.Query()
-	// fmt.Fprintf(w, "Hello %s\n", label)
+	// criteria := p.InstrumentSearchCriteria{InstrumentID: 10001}
+	criteria := p.InstrumentSearchCriteria{Name: "Dollar"}
+	result, _ := p.SearchInstruments(&criteria)
+	b, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Fprintf(w, "%v", string(b)) // json generic formatting "encoding/json"
 }
 
 // Start http service
@@ -65,7 +60,7 @@ func Start() {
 	// get d'un instrument par ID
 	router.GET("/instrument/:instrumentID/", getInstrument)
 	// liste des instruments
-	router.GET("/instrument/", listInstruments)
+	router.GET("/instrument/", searchInstruments)
 	// liste des instruments d'une classe
 	//router.GET("/instrument/:classId/", listInstrumentsForInstrumentClassID)
 
