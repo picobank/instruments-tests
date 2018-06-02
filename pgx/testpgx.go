@@ -15,13 +15,14 @@ import (
 
 var pool *pgx.ConnPool
 
-const instrumentColumns string = "instrument_id, symbol, name, description, instrument_class_id, currency_id, from_date, thru_date, created_at, created_by, updated_at, updated_by"
-const getInstrumentsByID string = "select " + instrumentColumns + " from instrument where instrument_id = $1"
-const getInstrumentClassByID string = "select instrument_class_id, name from instrument_class where instrument_class_id = $1"
+const instrumentCols string = "i.instrument_id, i.symbol, i.name, i.description, i.instrument_class_id, i.currency_id, i.from_date, i.thru_date, i.created_at, i.created_by, i.updated_at, i.updated_by"
+const instrumentClassCols string = "ic.instrument_class_id, ic.name"
+const getInstrumentsByID string = "select " + instrumentCols + ", " + instrumentClassCols + " from instrument i join instrument_class ic on ic.instrument_class_id = i.instrument_class_id where instrument_id = $1"
+const getInstrumentClassByID string = "select " + instrumentClassCols + " from instrument_class ic where instrument_class_id = $1"
 
 const listInstrumentClasses string = "select instrument_class_id, name from instrument_class"
-const listInstruments string = "select " + instrumentColumns + " from instrument"
-const listInstrumentsForClass string = "select " + instrumentColumns + " from instrument where instrument_class_id = $1"
+const listInstruments string = "select " + instrumentCols + " from instrument"
+const listInstrumentsForClass string = "select " + instrumentCols + " from instrument where instrument_class_id = $1"
 
 func init() {
 	fmt.Println("\nTest package github.com/jackc/pgx ...")
@@ -46,21 +47,18 @@ func mapInstrument(rows *pgx.Rows) (*m.Instrument, error) {
 	var currencyID *int32 // nillable value
 	var symbol, name, description, createdBy, updatedBy string
 	var fromDate, thruDate, createdAt, updatedAt time.Time
+	var classID uint32
+	var className string
 
-	err := rows.Scan(&instrumentID, &symbol, &name, &description, &instrumentClassID, &currencyID, &fromDate, &thruDate, &createdAt, &createdBy, &updatedAt, &updatedBy)
+	err := rows.Scan(&instrumentID, &symbol, &name, &description, &instrumentClassID, &currencyID, &fromDate, &thruDate, &createdAt, &createdBy, &updatedAt, &updatedBy, &classID, &className)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error fetching query result:", err)
 		return nil, err
 	}
 
-	var instrumentClass *m.InstrumentClass
-	instrumentClass, err = GetInstrumentClass(instrumentClassID)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error fetching instrumentclass query result:", err)
-		return nil, err
-	}
+	instrumentClass := &m.InstrumentClass{ID: classID, Name: className}
 
-	// TODO : mapper currency, class, institutions
+	// TODO : mapper currency, institutions
 	return &m.Instrument{ID: instrumentID, Symbol: symbol, Name: name, Description: description, Class: instrumentClass, Currency: nil, Institutions: nil, FromDate: fromDate, ThruDate: thruDate, CreatedAt: createdAt, UpdatedAt: updatedAt, CreatedBy: createdBy, UpdatedBy: updatedBy}, nil
 }
 
@@ -80,6 +78,7 @@ func GetInstrumentClass(instrumenClassID uint32) (*m.InstrumentClass, error) {
 
 	conn := connection()
 	defer pool.Release(conn)
+	fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentClassByID, instrumenClassID)
 	rows, err := conn.Query(getInstrumentClassByID, instrumenClassID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
@@ -88,9 +87,7 @@ func GetInstrumentClass(instrumenClassID uint32) (*m.InstrumentClass, error) {
 	defer rows.Close()
 
 	var instrumentClass *m.InstrumentClass
-	for rows.Next() {
-		instrumentClass, err = mapInstrumentClass(rows)
-	}
+	instrumentClass, err = mapInstrumentClass(rows)
 
 	return instrumentClass, err
 }
@@ -99,11 +96,9 @@ func GetInstrumentClass(instrumenClassID uint32) (*m.InstrumentClass, error) {
 func GetInstrument(instrumentID uint32) (*m.Instrument, error) {
 	fmt.Printf("\nGetInstrument(%d) ...\n", instrumentID)
 
-	cnx := connection()
-	defer pool.Release(cnx)
-
 	conn := connection()
 	defer pool.Release(conn)
+	fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentsByID, instrumentID)
 	rows, err := conn.Query(getInstrumentsByID, instrumentID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
