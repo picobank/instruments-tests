@@ -41,6 +41,7 @@ func init() {
 }
 
 func mapInstrument(rows *pgx.Rows) (*m.Instrument, error) {
+	// tester https://marcesher.com/2014/10/13/go-working-effectively-with-database-nulls/
 	var instrumentID, instrumentClassID uint32
 	var currencyID *int32 // nillable value
 	var symbol, name, description, createdBy, updatedBy string
