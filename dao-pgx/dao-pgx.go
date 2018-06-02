@@ -1,4 +1,4 @@
-package testpgx
+package daopgx
 
 import (
 	"errors"
