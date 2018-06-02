@@ -12,9 +12,9 @@ import (
 	// https://github.com/julienschmidt/httprouter
 
 	"github.com/julienschmidt/httprouter"
-	p "github.com/tests/pgx"
 
-	m "github.com/tests/models"
+	m "github.com/picobank/instruments-tests/models"
+	p "github.com/picobank/instruments-tests/pgx"
 )
 
 func listInstrumentClass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

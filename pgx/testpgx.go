@@ -10,7 +10,7 @@ import (
 	// https://github.com/jackc/pgx
 	"github.com/jackc/pgx"
 
-	m "github.com/tests/models"
+	m "github.com/picobank/instruments-tests/models"
 )
 
 var pool *pgx.ConnPool
@@ -218,21 +218,16 @@ func ListInstrumentsForInstrumentClassID(instrumentClassID int32) (int32, error)
 }
 
 func connection() *pgx.Conn {
-	fmt.Printf("[Pre  acquire] Connection pool stats: MaxConnections=%d,   CurrentConnections=%d,   AvailableConnections=%d\n", pool.Stat().MaxConnections, pool.Stat().CurrentConnections, pool.Stat().AvailableConnections)
 	conn, err := pool.Acquire()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error acquiring connection:", err)
 		panic(err)
 	}
 	// defer release(conn)
-	fmt.Printf("[Post acquire] Connection pool stats: MaxConnections=%d,   CurrentConnections=%d,   AvailableConnections=%d\n", pool.Stat().MaxConnections, pool.Stat().CurrentConnections, pool.Stat().AvailableConnections)
 
 	return conn
 }
 
 func release(conn *pgx.Conn) {
-	fmt.Printf("[Pre  release] Connection pool stats: MaxConnections=%d,   CurrentConnections=%d,   AvailableConnections=%d\n", pool.Stat().MaxConnections, pool.Stat().CurrentConnections, pool.Stat().AvailableConnections)
-	// fmt.Printf("Release connection ...\n")
 	pool.Release(conn)
-	fmt.Printf("[Post release] Connection pool stats: MaxConnections=%d,   CurrentConnections=%d,   AvailableConnections=%d\n", pool.Stat().MaxConnections, pool.Stat().CurrentConnections, pool.Stat().AvailableConnections)
 }
