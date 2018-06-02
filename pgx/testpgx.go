@@ -21,8 +21,8 @@ const getInstrumentsByID string = "select " + instrumentCols + ", " + instrument
 const getInstrumentClassByID string = "select " + instrumentClassCols + " from instrument_class ic where instrument_class_id = $1"
 
 const listInstrumentClasses string = "select instrument_class_id, name from instrument_class"
-const listInstruments string = "select " + instrumentCols + " from instrument"
-const listInstrumentsForClass string = "select " + instrumentCols + " from instrument where instrument_class_id = $1"
+const listInstruments string = "select " + instrumentCols + " from instrument i"
+const listInstrumentsForClass string = "select " + instrumentCols + " from instrument i where instrument_class_id = $1"
 
 func init() {
 	fmt.Println("\nTest package github.com/jackc/pgx ...")
