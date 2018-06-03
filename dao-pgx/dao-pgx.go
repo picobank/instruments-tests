@@ -16,31 +16,47 @@ import (
 
 var pool *pgx.ConnPool
 
-const instrumentCols string = `i.instrument_id, 
-							   i.symbol, 
-							   i.name, 
-							   i.description, 
-							   i.instrument_class_id, 
-							   i.currency_id, 
-							   i.from_date, 
-							   i.thru_date, 
-							   i.created_at, 
-							   i.created_by, 
-							   i.updated_at, 
-							   i.updated_by `
-const instrumentClassCols string = `ic.instrument_class_id, 
-                               ic.name`
-const getInstrumentByID string = "select " + instrumentCols + `, 
-                               ` + instrumentClassCols + `
-	from instrument i
-	join instrument_class ic on ic.instrument_class_id = i.instrument_class_id 
-	left join instrument i2 on i2.instrument_id = i.currency_id 
-	where i.instrument_id = $1`
-const getInstrumentClassByID string = "select " + instrumentClassCols + " from instrument_class ic where instrument_class_id = $1"
+const instrumentCols = `
+          i.instrument_id, 
+		  i.symbol, 
+		  i.name, 
+		  i.description,
+		  i.instrument_class_id, 
+		  i.currency_id,
+		  i.from_date,
+		  i.thru_date,
+		  i.created_at,
+		  i.created_by,
+		  i.updated_at,
+          i.updated_by`
 
-const searchInstruments string = "select " + instrumentCols + ", " + instrumentClassCols + " \nfrom instrument i \njoin instrument_class ic on ic.instrument_class_id = i.instrument_class_id \nwhere 1=1"
+const instrumentClassCols = `
+          ic.instrument_class_id, 
+          ic.name`
 
-const listInstrumentClasses string = "select instrument_class_id, name from instrument_class"
+const getInstrumentByID = `
+   SELECT ` + instrumentCols + `,
+          ` + instrumentClassCols + `
+     FROM instrument i
+     JOIN instrument_class ic ON ic.instrument_class_id = i.instrument_class_id 
+LEFT JOIN instrument i2 ON i2.instrument_id = i.currency_id 
+    WHERE i.instrument_id = $1`
+
+const getInstrumentClassByID = `
+   SELECT ` + instrumentClassCols + `
+     FROM instrument_class ic 
+    WHERE instrument_class_id = $1`
+
+const searchInstruments = `
+   SELECT ` + instrumentCols + `,
+          ` + instrumentClassCols + `
+     FROM instrument i
+     JOIN instrument_class ic ON ic.instrument_class_id = i.instrument_class_id 
+    WHERE 1 = 1`
+
+const listInstrumentClasses = `
+   SELECT instrument_class_id, name 
+	 FROM instrument_class`
 
 func init() {
 	fmt.Println("\nTest package github.com/jackc/pgx ...")
