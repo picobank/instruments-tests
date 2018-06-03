@@ -22,38 +22,38 @@ const (
 
 // InstrumentClass represents an instrument class
 type InstrumentClass struct {
-	ID   uint32
-	Name string
+	ID   uint32 `json:"id"`
+	Name string `json:"name"`
 }
 
 // Instrument represents an instrument
 type Instrument struct {
-	ID           uint32
-	Symbol       string
-	Name         string
-	Description  string
-	Class        *InstrumentClass
-	Currency     *Instrument
-	Institutions *Institution
-	FromDate     time.Time
-	ThruDate     time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	CreatedBy    string
-	UpdatedBy    string
+	ID           uint32           `json:"id"`
+	Symbol       string           `json:"symbol"`
+	Name         string           `json:"name"`
+	Description  string           `json:"desc,omitempty"`
+	Class        *InstrumentClass `json:"class"`
+	Currency     *Instrument      `json:"currency,omitempty"`
+	Institutions *Institution     `json:"institutions,omitempty"`
+	FromDate     time.Time        `json:"from"`
+	ThruDate     time.Time        `json:"to,omitempty"`
+	CreatedAt    time.Time        `json:"create"`
+	UpdatedAt    time.Time        `json:"update"`
+	CreatedBy    string           `json:"createdBy"`
+	UpdatedBy    string           `json:"updatedBy"`
 }
 
 // Institution represents an institution
 type Institution struct {
-	ID          uint32
-	Name        string
-	Description string
-	Acronym     string
-	Instruments []*Instrument
-	FromDate    time.Time
-	ThruDate    time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	CreatedBy   string
-	UpdatedBy   string
+	ID          uint32        `json:"id"`
+	Name        string        `json:"name"`
+	Description string        `json:"desc,omitempty"`
+	Acronym     string        `json:"acronym,omitempty"`
+	Instruments []*Instrument `json:"instruments,omitempty"`
+	FromDate    time.Time     `json:"from"`
+	ThruDate    time.Time     `json:"to"`
+	CreatedAt   time.Time     `json:"create"`
+	UpdatedAt   time.Time     `json:"update"`
+	CreatedBy   string        `json:"createdBy"`
+	UpdatedBy   string        `json:"updatedBy"`
 }

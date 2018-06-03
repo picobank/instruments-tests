@@ -1,6 +1,7 @@
 package daopgx
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -15,9 +16,22 @@ import (
 
 var pool *pgx.ConnPool
 
-const instrumentCols string = "i.instrument_id, i.symbol, i.name, i.description, i.instrument_class_id, i.currency_id, i.from_date, i.thru_date, i.created_at, i.created_by, i.updated_at, i.updated_by"
-const instrumentClassCols string = "ic.instrument_class_id, ic.name"
-const getInstrumentByID string = "select " + instrumentCols + ", " + instrumentClassCols + `
+const instrumentCols string = `i.instrument_id, 
+							   i.symbol, 
+							   i.name, 
+							   i.description, 
+							   i.instrument_class_id, 
+							   i.currency_id, 
+							   i.from_date, 
+							   i.thru_date, 
+							   i.created_at, 
+							   i.created_by, 
+							   i.updated_at, 
+							   i.updated_by `
+const instrumentClassCols string = `ic.instrument_class_id, 
+                               ic.name`
+const getInstrumentByID string = "select " + instrumentCols + `, 
+                               ` + instrumentClassCols + `
 	from instrument i
 	join instrument_class ic on ic.instrument_class_id = i.instrument_class_id 
 	left join instrument i2 on i2.instrument_id = i.currency_id 
@@ -183,6 +197,9 @@ func buildCriteria(query string, criteria *InstrumentSearchCriteria) string {
 	if criteria.ClassName != "" {
 		query = query + fmt.Sprintf("\n and ic.name = '%s'", criteria.ClassName)
 	}
+	if criteria.ClassID != 0 {
+		query = query + fmt.Sprintf("\n and ic.instrument_class_id = %d", criteria.ClassID)
+	}
 	// TODO Currency,CheckDate
 	return query
 }
@@ -204,10 +221,22 @@ func release(conn *pgx.Conn) {
 
 // InstrumentSearchCriteria blabla
 type InstrumentSearchCriteria struct {
-	InstrumentID []uint32
-	Symbol       string
-	Name         string
-	ClassName    string
-	Currency     string
-	CheckDate    time.Time
+	InstrumentID []uint32 `json:"ids,omitempty"`
+	Symbol       string   `json:"symbol,omitempty"`
+	Name         string   `json:"name,omitempty"`
+	ClassName    string   `json:"className,omitempty"`
+	ClassID      uint32   `json:"class,omitempty"`
+	// Currency     string
+	// CheckDate    time.Time
+}
+
+// ToJSON ...
+func (isc *InstrumentSearchCriteria) ToJSON() []byte {
+	b, _ := json.Marshal(isc)
+	return b
+}
+
+// FromJSON ...
+func (isc *InstrumentSearchCriteria) FromJSON(jsonStr []byte) error {
+	return json.Unmarshal(jsonStr, &isc)
 }
