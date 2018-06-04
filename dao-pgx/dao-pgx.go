@@ -31,7 +31,7 @@ const instrumentCols = `
 
 const instrumentClassCols = `
 	ic.instrument_class_id, 
-	ic.name`
+		ic.name`
 
 const getInstrumentByID = `
    SELECT ` + instrumentCols + `, ` + instrumentClassCols + `
