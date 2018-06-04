@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	// https://github.com/jackc/pgx
@@ -181,9 +180,9 @@ func ListInstrumentClass() ([]m.InstrumentClass, error) {
 func SearchInstruments(criteria *InstrumentSearchCriteria) ([]m.Instrument, error) {
 	fmt.Printf("\nSearchInstruments(%v) ...\n", criteria)
 
-	query := buildCriteria(searchInstruments, criteria)
+	query, bindings := buildCriteria(searchInstruments, criteria)
 	fmt.Printf("\t[SQL] %s\n", query)
-	rows, err := connection().Query(query)
+	rows, err := connection().Query(query, *bindings...)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
 		os.Exit(1)
@@ -200,24 +199,41 @@ func SearchInstruments(criteria *InstrumentSearchCriteria) ([]m.Instrument, erro
 	return result, rows.Err()
 }
 
-func buildCriteria(query string, criteria *InstrumentSearchCriteria) string {
+func buildCriteria(query string, criteria *InstrumentSearchCriteria) (string, *[]interface{}) {
+	bindings := make([]interface{}, 0, 0)
+	index := 0
 	if criteria.InstrumentID != nil && len(criteria.InstrumentID) > 0 {
-		query = query + fmt.Sprintf("\n and i.instrument_id in (%s)", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(criteria.InstrumentID)), ","), "[]"))
+		// query = query + fmt.Sprintf("\n and i.instrument_id in (%s)", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(criteria.InstrumentID)), ","), "[]"))
+		bindings = append(bindings, criteria.InstrumentID)
+		index++
+		query = query + fmt.Sprintf("\n and i.instrument_id = ANY($%d)", index)
 	}
 	if criteria.Symbol != "" {
-		query = query + fmt.Sprintf("\n and i.symbol = '%s'", criteria.Symbol)
+		// query = query + fmt.Sprintf("\n and i.symbol = '%s'", criteria.Symbol)
+		bindings = append(bindings, criteria.Symbol)
+		index++
+		query = query + fmt.Sprintf("\n and i.symbol = $%d", index)
 	}
 	if criteria.Name != "" {
-		query = query + fmt.Sprintf("\n and i.name like '%%%s%%'", criteria.Name)
+		// query = query + fmt.Sprintf("\n and i.name like '%%%s%%'", criteria.Name)
+		bindings = append(bindings, criteria.Name)
+		index++
+		query = query + fmt.Sprintf("\n and i.name like '%%' || $%d || '%%'", index)
 	}
 	if criteria.ClassName != "" {
-		query = query + fmt.Sprintf("\n and ic.name = '%s'", criteria.ClassName)
+		// query = query + fmt.Sprintf("\n and ic.name = '%s'", criteria.ClassName)
+		bindings = append(bindings, criteria.ClassName)
+		index++
+		query = query + fmt.Sprintf("\n and ic.name = $%d", index)
 	}
 	if criteria.ClassID != 0 {
-		query = query + fmt.Sprintf("\n and ic.instrument_class_id = %d", criteria.ClassID)
+		// query = query + fmt.Sprintf("\n and ic.instrument_class_id = %d", criteria.ClassID)
+		bindings = append(bindings, criteria.ClassID)
+		index++
+		query = query + fmt.Sprintf("\n and ic.instrument_class_id = $%d", index)
 	}
 	// TODO Currency,CheckDate
-	return query
+	return query, &bindings
 }
 
 func connection() *pgx.Conn {
