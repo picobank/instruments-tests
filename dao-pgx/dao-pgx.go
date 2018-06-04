@@ -16,29 +16,28 @@ import (
 var pool *pgx.ConnPool
 
 const instrumentCols = `
-          i.instrument_id, 
-		  i.symbol, 
-		  i.name, 
-		  i.description,
-		  i.instrument_class_id, 
-		  i.currency_id,
-		  i.from_date,
-		  i.thru_date,
-		  i.created_at,
-		  i.created_by,
-		  i.updated_at,
-          i.updated_by`
+	i.instrument_id, 
+	i.symbol, 
+	i.name, 
+	i.description,
+	i.instrument_class_id, 
+	i.currency_id,
+	i.from_date,
+	i.thru_date,
+	i.created_at,
+	i.created_by,
+	i.updated_at,
+	i.updated_by`
 
 const instrumentClassCols = `
-          ic.instrument_class_id, 
-          ic.name`
+	ic.instrument_class_id, 
+	ic.name`
 
 const getInstrumentByID = `
-   SELECT ` + instrumentCols + `,
-          ` + instrumentClassCols + `
+   SELECT ` + instrumentCols + `, ` + instrumentClassCols + `
      FROM instrument i
      JOIN instrument_class ic ON ic.instrument_class_id = i.instrument_class_id 
-LEFT JOIN instrument i2 ON i2.instrument_id = i.currency_id 
+	 LEFT JOIN instrument i2 ON i2.instrument_id = i.currency_id 
     WHERE i.instrument_id = $1`
 
 const getInstrumentClassByID = `
@@ -47,8 +46,7 @@ const getInstrumentClassByID = `
     WHERE instrument_class_id = $1`
 
 const searchInstruments = `
-   SELECT ` + instrumentCols + `,
-          ` + instrumentClassCols + `
+   SELECT ` + instrumentCols + `, ` + instrumentClassCols + `
      FROM instrument i
      JOIN instrument_class ic ON ic.instrument_class_id = i.instrument_class_id 
     WHERE 1 = 1`
