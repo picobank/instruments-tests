@@ -10,7 +10,7 @@ import (
 	// https://github.com/jackc/pgx
 	"github.com/jackc/pgx"
 
-	m "github.com/picobank/instruments-tests/models"
+	. "github.com/picobank/instruments-tests/models"
 )
 
 var pool *pgx.ConnPool
@@ -57,22 +57,29 @@ const listInstrumentClasses = `
 
 func init() {
 	fmt.Println("\nTest package github.com/jackc/pgx ...")
+	fmt.Printf("PGHOST: '%s'\nPGUSER: '%s'\nPGPASSWORD: '%s'\nPGDATABASE: '%s'", getEnv("PGHOST", "127.0.0.1"), getEnv("PGUSER", "instruments"), getEnv("PGPASSWORD", "raspberry"), getEnv("PGDATABASE", "picobank"))
 
-	config, err := pgx.ParseEnvLibpq()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to parse environment:", err)
-		os.Exit(1)
+	connPoolConfig := pgx.ConnPoolConfig{
+		ConnConfig: pgx.ConnConfig{
+			Host:     getEnv("PGHOST", "127.0.0.1"),
+			User:     getEnv("PGUSER", "instruments"),
+			Password: getEnv("PGPASSWORD", "raspberry"),
+			Database: getEnv("PGDATABASE", "picobank"),
+		},
+		MaxConnections: 5,
+		// AfterConnect:   afterConnectCallback,
 	}
-	pool, err = pgx.NewConnPool(pgx.ConnPoolConfig{ConnConfig: config})
+	var err error
+	pool, err = pgx.NewConnPool(connPoolConfig)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to connect to database:", err)
+		fmt.Println("Unable to create connection pool", err)
 		os.Exit(1)
 	}
 
 	fmt.Println("\t Connexion a la base établie")
 }
 
-func mapInstrument(rows *pgx.Rows) (*m.Instrument, error) {
+func mapInstrument(rows *pgx.Rows) (*Instrument, error) {
 	// tester https://marcesher.com/2014/10/13/go-working-effectively-with-database-nulls/
 	var instrumentID, instrumentClassID uint32
 	var currencyID *int32 // nillable value
@@ -87,24 +94,24 @@ func mapInstrument(rows *pgx.Rows) (*m.Instrument, error) {
 		return nil, err
 	}
 
-	instrumentClass := &m.InstrumentClass{ID: classID, Name: className}
+	instrumentClass := &InstrumentClass{ID: classID, Name: className}
 
 	// TODO : mapper currency, institutions
-	return &m.Instrument{ID: instrumentID, Symbol: symbol, Name: name, Description: description, Class: instrumentClass, Currency: nil, Institutions: nil, FromDate: fromDate, ThruDate: thruDate, CreatedAt: createdAt, UpdatedAt: updatedAt, CreatedBy: createdBy, UpdatedBy: updatedBy}, nil
+	return &Instrument{ID: instrumentID, Symbol: symbol, Name: name, Description: description, Class: instrumentClass, Currency: nil, Institutions: nil, FromDate: fromDate, ThruDate: thruDate, CreatedAt: createdAt, UpdatedAt: updatedAt, CreatedBy: createdBy, UpdatedBy: updatedBy}, nil
 }
 
-func mapInstrumentClass(rows *pgx.Rows) (*m.InstrumentClass, error) {
+func mapInstrumentClass(rows *pgx.Rows) (*InstrumentClass, error) {
 	var id uint32
 	var name string
 	err := rows.Scan(&id, &name)
 	if err != nil {
 		return nil, err
 	}
-	return &m.InstrumentClass{ID: id, Name: name}, nil
+	return &InstrumentClass{ID: id, Name: name}, nil
 }
 
 // GetInstrumentClass retourne l'instrumentClass correspondant à un id
-func GetInstrumentClass(instrumenClassID uint32) (*m.InstrumentClass, error) {
+func GetInstrumentClass(instrumenClassID uint32) (*InstrumentClass, error) {
 	fmt.Printf("\nGetInstrumentClass(%d) ...\n", instrumenClassID)
 
 	conn := connection()
@@ -117,14 +124,14 @@ func GetInstrumentClass(instrumenClassID uint32) (*m.InstrumentClass, error) {
 	}
 	defer rows.Close()
 
-	var instrumentClass *m.InstrumentClass
+	var instrumentClass *InstrumentClass
 	instrumentClass, err = mapInstrumentClass(rows)
 
 	return instrumentClass, err
 }
 
 // GetInstrument retourne l'instrument correspondant à un id
-func GetInstrument(instrumentID uint32) (*m.Instrument, error) {
+func GetInstrument(instrumentID uint32) (*Instrument, error) {
 	fmt.Printf("\nGetInstrument(%d) ...\n", instrumentID)
 
 	conn := connection()
@@ -137,7 +144,7 @@ func GetInstrument(instrumentID uint32) (*m.Instrument, error) {
 	}
 	defer rows.Close()
 
-	var instrument *m.Instrument
+	var instrument *Instrument
 	for rows.Next() {
 		instrument, err = mapInstrument(rows)
 		if rows.Next() {
@@ -149,7 +156,7 @@ func GetInstrument(instrumentID uint32) (*m.Instrument, error) {
 }
 
 // ListInstrumentClass affiche la liste des classes d'instruments dans la console
-func ListInstrumentClass() ([]m.InstrumentClass, error) {
+func ListInstrumentClass() ([]InstrumentClass, error) {
 	fmt.Println("\nListe des classes d'instruments ...")
 	fmt.Println("\n", listInstrumentClasses)
 
@@ -160,7 +167,7 @@ func ListInstrumentClass() ([]m.InstrumentClass, error) {
 	}
 	defer rows.Close()
 
-	var result []m.InstrumentClass
+	var result []InstrumentClass
 	for rows.Next() {
 		var id uint32
 		var name string
@@ -168,14 +175,14 @@ func ListInstrumentClass() ([]m.InstrumentClass, error) {
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, m.InstrumentClass{ID: id, Name: name})
+		result = append(result, InstrumentClass{ID: id, Name: name})
 	}
 
 	return result, rows.Err()
 }
 
 // SearchInstruments affiche la liste des instruments dans la console
-func SearchInstruments(criteria *InstrumentSearchCriteria) ([]m.Instrument, error) {
+func SearchInstruments(criteria *InstrumentSearchCriteria) ([]Instrument, error) {
 	fmt.Printf("\nSearchInstruments(%v) ...\n", criteria)
 
 	query, bindings := buildCriteria(searchInstruments, criteria)
@@ -187,8 +194,8 @@ func SearchInstruments(criteria *InstrumentSearchCriteria) ([]m.Instrument, erro
 	}
 	defer rows.Close()
 
-	var instrument *m.Instrument
-	var result []m.Instrument
+	var instrument *Instrument
+	var result []Instrument
 	for rows.Next() {
 		instrument, err = mapInstrument(rows)
 		result = append(result, *instrument)
@@ -247,6 +254,13 @@ func connection() *pgx.Conn {
 
 func release(conn *pgx.Conn) {
 	pool.Release(conn)
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
 
 // InstrumentSearchCriteria blabla

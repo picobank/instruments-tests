@@ -10,38 +10,23 @@ import (
 	// https://github.com/valyala/fasthttp
 
 	"github.com/julienschmidt/httprouter"
-	p "github.com/picobank/instruments-tests/dao-pgx"
+	dao "github.com/picobank/instruments-tests/dao-pgx"
 )
 
 func listInstrumentClass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "ListInstrumentClass...")
-	instrumentClasses, _ := p.ListInstrumentClass()
+	instrumentClasses, _ := dao.ListInstrumentClass()
 	fmt.Fprintf(w, " => %v\n", instrumentClasses)
 }
 
 func httpTest(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	/*
-		queryValues := r.URL.Query()
-		criteriaP := queryValues.Get("criteria")
-		fmt.Print("\n")
-		fmt.Printf("---> r.URL.Query() ='%v'\n", r.URL.Query())
-		fmt.Printf("---> http.criteria ='%s'\n", criteriaP)
-
-		testJ := p.InstrumentSearchCriteria{InstrumentID: []uint32{10001, 10002, 10005}, Symbol: "USD", Name: "Dollar", ClassID: 1, ClassName: "Currency"}
-		b := testJ.ToJSON()
-		fmt.Printf("\n---> InstrumentSearchCriteria -> json : '%s'\n", string(b))
-
-		criteriaJ := p.InstrumentSearchCriteria{}
-		criteriaJ.FromJSON(b)
-		fmt.Printf("---> InstrumentSearchCriteria.FromJSON : %v\n", criteriaJ)
-	*/
 	label := ps.ByName("label")
 	fmt.Fprintf(w, "Hello %s\n", label)
 }
 
 func getInstrument(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, _ := strconv.Atoi(ps.ByName("instrumentID"))
-	instrument, _ := p.GetInstrument(uint32(id))
+	instrument, _ := dao.GetInstrument(uint32(id))
 
 	b, _ := json.MarshalIndent(instrument, "", "  ")
 	fmt.Fprintf(w, "%v", string(b)) // json generic formatting "encoding/json"
@@ -53,11 +38,11 @@ func searchInstruments(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	queryValues := r.URL.Query()
 	criteriaP := queryValues.Get("criteria")
 
-	criteria := p.InstrumentSearchCriteria{}
+	criteria := dao.InstrumentSearchCriteria{}
 	criteria.FromJSON([]byte(criteriaP))
 	fmt.Printf("---> InstrumentSearchCriteria.FromJSON : %v\n", string(criteria.ToJSON()))
 
-	result, _ := p.SearchInstruments(&criteria)
+	result, _ := dao.SearchInstruments(&criteria)
 	b, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Fprintf(w, "%v", string(b)) // json generic formatting "encoding/json"
 }
