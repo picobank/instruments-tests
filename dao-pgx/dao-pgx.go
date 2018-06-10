@@ -116,7 +116,7 @@ func GetInstrumentClass(instrumenClassID uint32) (*InstrumentClass, error) {
 
 	conn := connection()
 	defer pool.Release(conn)
-	fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentClassByID, instrumenClassID)
+	// fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentClassByID, instrumenClassID)
 	rows, err := conn.Query(getInstrumentClassByID, instrumenClassID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
@@ -136,7 +136,7 @@ func GetInstrument(instrumentID uint32) (*Instrument, error) {
 
 	conn := connection()
 	defer pool.Release(conn)
-	fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentByID, instrumentID)
+	// fmt.Printf("\t[SQL] %s (%v)\n", getInstrumentByID, instrumentID)
 	rows, err := conn.Query(getInstrumentByID, instrumentID)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
@@ -183,10 +183,10 @@ func ListInstrumentClass() ([]InstrumentClass, error) {
 
 // SearchInstruments affiche la liste des instruments dans la console
 func SearchInstruments(criteria *InstrumentSearchCriteria) ([]Instrument, error) {
-	fmt.Printf("\nSearchInstruments(%v) ...\n", criteria)
+	// fmt.Printf("\nSearchInstruments(%v) ...\n", criteria)
 
 	query, bindings := buildCriteria(searchInstruments, criteria)
-	fmt.Printf("\t[SQL] %s\n", query)
+	// fmt.Printf("\t[SQL] %s\n", query)
 	rows, err := connection().Query(query, *bindings...)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing query:", err)
@@ -204,6 +204,29 @@ func SearchInstruments(criteria *InstrumentSearchCriteria) ([]Instrument, error)
 	return result, rows.Err()
 }
 
+// SearchInstrumentsJSON test benchmark, recherche un instrument par son symbol dans le document JSON
+func SearchInstrumentsJSON(symbol string) ([]Instrument, error) {
+	// fmt.Printf("\nSearchInstruments(%v) ...\n", criteria)
+
+	query := searchInstruments + "\n and datum ->> 'symbol' = $1"
+	//fmt.Printf("\t[SQL] %s\n", query)
+	//fmt.Printf("\t[Binding] %s\n", symbol)
+	rows, err := connection().Query(query, symbol)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error executing query:", err)
+		os.Exit(1)
+	}
+	defer rows.Close()
+
+	var instrument *Instrument
+	var result []Instrument
+	for rows.Next() {
+		instrument, err = mapInstrument(rows)
+		result = append(result, *instrument)
+	}
+
+	return result, rows.Err()
+}
 func buildCriteria(query string, criteria *InstrumentSearchCriteria) (string, *[]interface{}) {
 	bindings := make([]interface{}, 0, 0)
 	index := 0
@@ -247,7 +270,7 @@ func connection() *pgx.Conn {
 		fmt.Fprintln(os.Stderr, "Error acquiring connection:", err)
 		panic(err)
 	}
-	// defer release(conn)
+	defer release(conn)
 
 	return conn
 }
