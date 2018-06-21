@@ -11,11 +11,16 @@ import (
 
 const sqlInsert string = "insert into instrument(symbol, name, description, currency_id, instrument_class_id, from_date, thru_date, created_at, created_by, updated_at, updated_by) values ($1, $2, $3, $4,$5, '2001-01-01', '2999-01-01', current_date, 'ETL', current_date, 'ETL' )"
 
+const batchSize = 10000
+
 func init() {}
 
 // Load blablabla
 func Load(extractCh chan BatsInstrument) chan bool {
 	sigend := make(chan bool)
+
+	clearInstruments()
+
 	cnx := Connection()
 	defer Release(cnx)
 	_, err := cnx.Prepare("pInsert", sqlInsert)
@@ -32,6 +37,7 @@ func loadDb(extractCh chan BatsInstrument, sigend chan bool) {
 	cnx := Connection()
 	defer pool.Release(cnx)
 	batch := cnx.BeginBatch()
+	defer batch.Close()
 	for {
 		data, open := <-extractCh
 		if !open {
@@ -41,7 +47,7 @@ func loadDb(extractCh chan BatsInstrument, sigend chan bool) {
 		// insertDb(data)
 		// insertDbPrepared(data)
 		insertDbBatchPrepared(data, batch)
-		if count%10000 == 0 {
+		if count%batchSize == 0 {
 			err := batch.Send(context.Background(), nil)
 			batch = cnx.BeginBatch()
 			panicIf(err)
@@ -52,6 +58,16 @@ func loadDb(extractCh chan BatsInstrument, sigend chan bool) {
 	panicIf(err)
 	fmt.Println("Instruments loaded: ", count, " in ", time.Since(start))
 	sigend <- true
+}
+
+func clearInstruments() {
+	start := time.Now()
+	cnx := Connection()
+	defer pool.Release(cnx)
+
+	cmd, err := cnx.Exec("DELETE FROM instrument WHERE id >= 10000")
+	panicIf(err)
+	fmt.Println("Cleared ", cmd.RowsAffected(), " instruments in ", time.Since(start))
 }
 
 // 20s
@@ -71,7 +87,9 @@ func insertDbPrepared(data BatsInstrument) {
 	panicIf(err)
 }
 
-// 3s
+//  5000 -> 2.5s
+// 10000 -> 2.2s
+// 20000 -> 2.4s
 func insertDbBatchPrepared(data BatsInstrument, batch *pgx.Batch) {
 	var currencyID = 3
 	batch.Queue("pInsert",
