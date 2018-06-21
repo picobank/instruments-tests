@@ -35,10 +35,8 @@ func extractDb(loader chan BatsInstrument) {
 	defer rows.Close()
 
 	for rows.Next() {
-		// var data EtlBatsInstrument
 		data := BatsInstrument{}
 
-		// todo extraire les données du resultset
 		err := rows.Scan(&data.CompanyName,
 			&data.BatsName,
 			&data.Isin,
@@ -79,10 +77,9 @@ func extractDb(loader chan BatsInstrument) {
 			fmt.Fprintln(os.Stderr, "Error processing resultset query:", err)
 			panic(err)
 		}
-		// fmt.Println("Données extraites: ", data)
 
 		loader <- data
 	}
-	// on a traité toutes les lignes
+	// all lines are extracted and sent to the loader
 	close(loader)
 }
