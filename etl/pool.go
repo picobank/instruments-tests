@@ -39,7 +39,7 @@ func Connection() *pgx.Conn {
 		fmt.Fprintln(os.Stderr, "Error acquiring connection:", err)
 		panic(err)
 	}
-	defer Release(conn)
+	//defer Release(conn)
 
 	return conn
 }
