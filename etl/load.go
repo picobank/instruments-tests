@@ -41,7 +41,7 @@ func loadDb(extractCh chan BatsInstrument, sigend chan bool) {
 		// insertDb(data)
 		// insertDbPrepared(data)
 		insertDbBatchPrepared(data, batch)
-		if count%5000 == 0 {
+		if count%10000 == 0 {
 			err := batch.Send(context.Background(), nil)
 			batch = cnx.BeginBatch()
 			panicIf(err)
