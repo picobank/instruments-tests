@@ -3,6 +3,7 @@ package etl
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx"
@@ -11,9 +12,11 @@ import (
 
 const sqlInsert string = "insert into instrument(symbol, name, description, currency_id, instrument_class_id, from_date, thru_date, created_at, created_by, updated_at, updated_by) values ($1, $2, $3, $4,$5, '2001-01-01', '2999-01-01', current_date, 'ETL', current_date, 'ETL' )"
 
-const batchSize = 10000
+var batchSize int
 
-func init() {}
+func init() {
+	batchSize, _ = strconv.Atoi(getEnv("ETL_BATCHSIZE", "10000"))
+}
 
 // Load blablabla
 func Load(extractCh chan BatsInstrument) chan bool {
@@ -49,6 +52,7 @@ func loadDb(extractCh chan BatsInstrument, sigend chan bool) {
 		insertDbBatchPrepared(data, batch)
 		if count%batchSize == 0 {
 			err := batch.Send(context.Background(), nil)
+			batch.Close()
 			batch = cnx.BeginBatch()
 			panicIf(err)
 			fmt.Println("Instruments loaded as by now: ", count, " in ", time.Since(start))
