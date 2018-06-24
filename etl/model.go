@@ -8,7 +8,7 @@ import (
 
 func init() {}
 
-// EtlBatsInstrument blablabla
+// BatsInstrument blablabla
 type BatsInstrument struct {
 	CompanyName                          sql.NullString // 0
 	BatsName                             sql.NullString

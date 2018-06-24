@@ -8,7 +8,7 @@ import (
 
 var buffSize int
 
-const sqlExtract string = "select company_name,bats_name,isin,currency,mic,reuters_exchange_code,lis_local,live,tick_type,reference_price,bats_prev_close,live_date,bloomberg_primary,bloomberg_bats,mifid_share,asset_class,matching_unit,euroccp_enabled,xclr_enabled,lchl_enabled,reuters_ric_primary,reuters_ric_bats,reference_adt_eur,csd,corporate_action_status,supported_services,trading_segment,printed_name,periodic_auction_max_duration,periodic_auction_min_order_entry_size,periodic_auction_min_order_entry_notional,max_otr_count,max_otr_volume,capped,venue_cap_percentage,venue_uncap_date from etl_bats_instrument"
+const sqlExtract string = "select company_name,bats_name,isin,currency,mic,reuters_exchange_code,lis_local,live,tick_type,reference_price,bats_prev_close,live_date,bloomberg_primary,bloomberg_bats,mifid_share,asset_class,matching_unit,euroccp_enabled,xclr_enabled,lchl_enabled,reuters_ric_primary,reuters_ric_bats,reference_adt_eur,csd,corporate_action_status,supported_services,trading_segment,printed_name,periodic_auction_max_duration,periodic_auction_min_order_entry_size,periodic_auction_min_order_entry_notional,max_otr_count,max_otr_volume,capped,venue_cap_percentage,venue_uncap_date from etl.etl_bats_instrument"
 
 func init() {
 	buffSize, _ = strconv.Atoi(getEnv("ETL_BUFFSIZE", "5"))
